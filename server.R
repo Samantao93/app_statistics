@@ -9,6 +9,43 @@ library(writexl)
 
 
 function(input, output, session) {
+  
+  # Read the file
+  diabetic_data <- read.csv("C:/Users/sjega/Downloads/diabetic_data.csv")
+  unique(diabetic_data$gender) # Detecting unwanted values
+  
+  ## Change unwanted values by NA
+  unwanted_values <- c('?', 'Unknown/Invalid')
+  diabetic_data <- diabetic_data %>%
+    mutate(across(everything(), ~ifelse(. %in% unwanted_values, NA, .)))
+  
+  ## Finding out the max number of characters for the column encounter_id
+  nchar(max(diabetic_data$encounter_id))
+  
+  ## Filter duplicates, NA; select some columns for the following analysis and the same format for the encounter_id
+  diabetic_data_filter <- diabetic_data[!duplicated(diabetic_data$encounter_id),] %>%
+    na.omit() %>%
+    select(encounter_id,race,gender,age,medical_specialty,num_lab_procedures,num_procedures,num_medications,number_emergency,metformin,repaglinide,nateglinide,insulin) %>%
+    mutate(encounter_id = sprintf("%09d", encounter_id)) # Adding 0 until 9 characters
+  
+  ## Structure of the data filtered
+  str(diabetic_data_filter)
+  
+  ## Group by gender, age and metformin
+  df_group <- diabetic_data_filter %>% 
+    group_by(gender,age,metformin) %>% 
+    reframe(total=n())
+  head(df_group)
+  
+  ## Group by gender, age and show mean (parametric) and median (non-parametric) of the num_medications
+  df_group_medication <- diabetic_data_filter %>% 
+    group_by(gender,age) %>% 
+    reframe(mean_medication=mean(num_medications,na.rm=T),median_medication=median(num_medications,na.rm=T))
+  tail(df_group_medication)
+   1
+  
+  
+  
 
   ############## Funciones ##############
   calc_singrupo<-function(x,list) {
